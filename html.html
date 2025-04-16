@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบจองคอมพิวเตอร์</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Prompt', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(145deg, #0d011b, #1a0f2e);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 30px;
+      text-shadow: 0 0 15px #9400ff;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #9400ff, 0 0 20px #7b00cc; }
+      to { text-shadow: 0 0 20px #d100ff, 0 0 40px #ff00f7; }
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 0 20px #9400ff60;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .button {
+      padding: 12px;
+      background-color: #9400ff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #9400ffb0;
+      transition: transform 0.2s;
+      width: 100%;
+    }
+
+    .button:hover {
+      transform: scale(1.05);
+      background-color: #b300ff;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      color: #00ffcc;
+    }
+
+    .booking-page {
+      display: none;
+      animation: fadeIn 1s ease;
+    }
+
+    .show {
+      display: block;
+    }
+
+    /* Animation for button */
+    .btn-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>ระบบจองคอมพิวเตอร์</h1>
+  
+  <!-- หน้าหลัก -->
+  <div class="container btn-container">
+    <button class="button" onclick="showBookingPage()">เข้าสู่ระบบจอง</button>
+  </div>
+
+  <!-- หน้า ระบบจอง -->
+  <div class="container booking-page" id="bookingPage">
+    <h2>จองคอมพิวเตอร์</h2>
+
+    <label for="startTime">เลือกเวลาเริ่มเล่น:</label>
+    <input type="time" id="startTime">
+
+    <label for="duration">เลือกระยะเวลาที่จะเล่น (นาที):</label>
+    <select id="duration">
+      <option value="15">15 นาที</option>
+      <option value="30">30 นาที</option>
+      <option value="45">45 นาที</option>
+      <option value="60">60 นาที</option>
+    </select>
+
+    <button class="button" onclick="bookComputer()">จองและรอเวลาเริ่ม</button>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    // เปิดหน้า ระบบจอง
+    function showBookingPage() {
+      document.querySelector(".btn-container").classList.add("show");
+      document.getElementById("bookingPage").classList.add("show");
+    }
+
+    let countdownTimer;
+
+    function bookComputer() {
+      const startTime = document.getElementById('startTime').value;
+      const duration = parseInt(document.getElementById('duration').value);
+      const status = document.getElementById('status');
+
+      if (!startTime) {
+        status.innerText = '⛔ กรุณาเลือกเวลาเริ่มเล่น';
+        return;
+      }
+
+      const now = new Date();
+      const [hour, minute] = startTime.split(":").map(Number);
+      const targetTime = new Date();
+      targetTime.setHours(hour, minute, 0, 0);
+
+      const delay = targetTime - now;
+
+      if (delay <= 0) {
+        status.innerText = '⛔ เวลาเริ่มต้องอยู่ในอนาคต';
+        return;
+      }
+
+      status.innerText = `✅ รอจนถึงเวลา ${startTime} เพื่อเริ่มจับเวลา...`;
+
+      setTimeout(() => {
+        let remaining = duration * 60;
+        status.innerText = `🕒 เริ่มจับเวลา ${duration} นาทีแล้ว!`;
+
+        countdownTimer = setInterval(() => {
+          remaining--;
+          const min = Math.floor(remaining / 60);
+          const sec = remaining % 60;
+          status.innerText = `⌛ เหลือเวลา: ${min} นาที ${sec} วินาที`;
+
+          if (remaining <= 0) {
+            clearInterval(countdownTimer);
+            status.innerText = '⏰ หมดเวลาแล้ว!';
+            alert('⏰ หมดเวลาแล้ว! กรุณาจองใหม่');
+          }
+        }, 1000);
+      }, delay);
+    }
+  </script>
+</body>
+</html>
