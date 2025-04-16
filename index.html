@@ -4,15 +4,150 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ระบบจองคอมพิวเตอร์</title>
-  <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js"></script>
   <style>
-    /* ข้อมูล CSS ของคุณที่มีอยู่แล้ว */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Prompt', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(145deg, #0d011b, #1a0f2e);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 30px;
+      text-shadow: 0 0 15px #9400ff;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #9400ff, 0 0 20px #7b00cc; }
+      to { text-shadow: 0 0 20px #d100ff, 0 0 40px #ff00f7; }
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 0 20px #9400ff60;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    .btn-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    button {
+      padding: 12px;
+      background-color: #9400ff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #9400ffb0;
+      transition: transform 0.2s;
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      background-color: #b300ff;
+    }
+
+    .booking-page {
+      display: none;
+      animation: fadeIn 1s ease;
+    }
+
+    .show {
+      display: block;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      margin: 10px 0;
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      color: #00ffcc;
+    }
+
+    #previousBookings {
+      margin-top: 20px;
+      text-align: left;
+      font-size: 1rem;
+      color: #ff6600;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      width: 100%;
+    }
+
+    .booking-details {
+      margin: 10px 0;
+    }
+
+    /* Media Queries for responsiveness */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      .container {
+        padding: 20px;
+      }
+
+      button {
+        max-width: 90%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .container {
+        padding: 15px;
+      }
+
+      button {
+        max-width: 80%;
+      }
+    }
   </style>
 </head>
 <body>
   <h1>ระบบจองคอมพิวเตอร์</h1>
-
+  
   <!-- หน้าหลัก -->
   <div class="container btn-container">
     <button onclick="showBookingPage()">เข้าสู่ระบบจอง</button>
@@ -21,8 +156,10 @@
   <!-- หน้า ระบบจอง -->
   <div class="container booking-page" id="bookingPage">
     <h2>จองคอมพิวเตอร์</h2>
+
     <label for="startTime">เลือกเวลาเริ่มเล่น:</label>
     <input type="time" id="startTime">
+
     <label for="duration">เลือกระยะเวลาที่จะเล่น (นาที):</label>
     <select id="duration">
       <option value="15">15 นาที</option>
@@ -30,7 +167,9 @@
       <option value="45">45 นาที</option>
       <option value="60">60 นาที</option>
     </select>
+
     <button onclick="bookComputer()">จองและรอเวลาเริ่ม</button>
+
     <div id="status"></div>
   </div>
 
@@ -40,23 +179,26 @@
     <div id="bookingList"></div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js"></script>
+
   <script>
     // Firebase Configuration
-    const firebaseConfig = {
-  apiKey: "AIzaSyCDLjcitmrqHO-3Wf_pT7lbdk3Kh_MWTpk",
-  authDomain: "computer-booking-e6341.firebaseapp.com",
-  projectId: "computer-booking-e6341",
-  storageBucket: "computer-booking-e6341.firebasestorage.app",
-  messagingSenderId: "223463040793",
-  appId: "1:223463040793:web:ff8bf99e9fb599a4a08788",
-  measurementId: "G-TL2M9FJEDT"
-};
+     const firebaseConfig = {
+    apiKey: "AIzaSyCDLjcitmrqHO-3Wf_pT7lbdk3Kh_MWTpk",
+    authDomain: "computer-booking-e6341.firebaseapp.com",
+    projectId: "computer-booking-e6341",
+    storageBucket: "computer-booking-e6341.firebasestorage.app",
+    messagingSenderId: "223463040793",
+    appId: "1:223463040793:web:cb49a2b3233472c8a08788",
+    measurementId: "G-M5N1RLBEC7"
+    };
 
     // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const database = firebase.database(app);
 
-    // ฟังก์ชันแสดงข้อมูลจอง
+    // ฟังก์ชันในการแสดงข้อมูลการจองก่อนหน้า
     function displayPreviousBookings() {
       const bookingList = document.getElementById('bookingList');
       
@@ -79,6 +221,12 @@
           `;
         });
       });
+    }
+
+    // ฟังก์ชันเปิดหน้า ระบบจอง
+    function showBookingPage() {
+      document.querySelector(".btn-container").classList.add("show");
+      document.getElementById("bookingPage").classList.add("show");
     }
 
     // ฟังก์ชันจองคอมพิวเตอร์
