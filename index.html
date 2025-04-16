@@ -179,47 +179,50 @@
     <div id="bookingList"></div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
 
   <script>
-    // Firebase Configuration
-     const firebaseConfig = {
-    apiKey: "AIzaSyCDLjcitmrqHO-3Wf_pT7lbdk3Kh_MWTpk",
-    authDomain: "computer-booking-e6341.firebaseapp.com",
-    projectId: "computer-booking-e6341",
-    storageBucket: "computer-booking-e6341.firebasestorage.app",
-    messagingSenderId: "223463040793",
-    appId: "1:223463040793:web:cb49a2b3233472c8a08788",
-    measurementId: "G-M5N1RLBEC7"
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCDLjcitmrqHO-3Wf_pT7lbdk3Kh_MWTpk",
+      authDomain: "computer-booking-e6341.firebaseapp.com",
+      projectId: "computer-booking-e6341",
+      storageBucket: "computer-booking-e6341.firebasestorage.app",
+      messagingSenderId: "223463040793",
+      appId: "1:223463040793:web:cb49a2b3233472c8a08788",
+      measurementId: "G-M5N1RLBEC7"
     };
 
     // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
-    const database = firebase.database(app);
+    const database = firebase.database();
 
     // ฟังก์ชันในการแสดงข้อมูลการจองก่อนหน้า
     function displayPreviousBookings() {
       const bookingList = document.getElementById('bookingList');
       
-      // อ่านข้อมูลจาก Firebase
-      firebase.database().ref('bookings').on('value', function(snapshot) {
-        const bookings = snapshot.val() || [];
-        bookingList.innerHTML = '';
-
-        if (!bookings || bookings.length === 0) {
+      // ดึงข้อมูลจาก Firebase
+      database.ref('bookings').once('value').then(snapshot => {
+        const bookings = snapshot.val() || {};
+        
+        if (Object.keys(bookings).length === 0) {
           bookingList.innerHTML = '<p>ไม่มีการจอง</p>';
           return;
         }
 
-        Object.keys(bookings).forEach((key) => {
-          const booking = bookings[key];
-          bookingList.innerHTML += `
+        let html = '';
+        for (let id in bookings) {
+          const booking = bookings[id];
+          html += `
             <div class="booking-details">
               <strong>${booking.name}</strong> จองเวลา: ${booking.startTime} ระยะเวลา: ${booking.duration} นาที
             </div>
           `;
-        });
+        }
+
+        bookingList.innerHTML = html;
       });
     }
 
@@ -240,19 +243,49 @@
         return;
       }
 
-      const bookingDetails = {
-        name: 'ผู้จองคนที่ 1',
-        startTime: startTime,
-        duration: duration
-      };
+      const now = new Date();
+      const [hour, minute] = startTime.split(":").map(Number);
+      const targetTime = new Date();
+      targetTime.setHours(hour, minute, 0, 0);
 
-      // เก็บข้อมูลการจองใน Firebase
-      firebase.database().ref('bookings').push(bookingDetails);
+      const delay = targetTime - now;
 
-      status.innerText = `✅ การจองเสร็จสิ้น!`;
+      if (delay <= 0) {
+        status.innerText = '⛔ เวลาเริ่มต้องอยู่ในอนาคต';
+        return;
+      }
 
-      // แสดงการจองก่อนหน้า
-      displayPreviousBookings();
+      status.innerText = `✅ รอจนถึงเวลา ${startTime} เพื่อเริ่มจับเวลา...`;
+
+      setTimeout(() => {
+        let remaining = duration * 60;
+        status.innerText = `🕒 เริ่มจับเวลา ${duration} นาทีแล้ว!`;
+
+        const bookingDetails = {
+          name: 'ผู้จองคนที่ 1',
+          startTime: startTime,
+          duration: duration
+        };
+
+        // เก็บข้อมูลการจองใน Firebase
+        const newBookingRef = database.ref('bookings').push();
+        newBookingRef.set(bookingDetails);
+
+        displayPreviousBookings(); // แสดงข้อมูลการจองก่อนหน้า
+
+        countdownTimer = setInterval(() => {
+          remaining--;
+          const min = Math.floor(remaining / 60);
+          const sec = remaining % 60;
+          status.innerText = `⌛ เหลือเวลา: ${min} นาที ${sec} วินาที`;
+
+          if (remaining <= 0) {
+            clearInterval(countdownTimer);
+            status.innerText = '⏰ หมดเวลาแล้ว!';
+            alert('⏰ หมดเวลาแล้ว! กรุณาจองใหม่');
+          }
+        }, 1000);
+      }, delay);
     }
 
     // เมื่อโหลดหน้าเว็บ ให้แสดงการจองก่อนหน้า
