@@ -100,6 +100,21 @@
       color: #00ffcc;
     }
 
+    #previousBookings {
+      margin-top: 20px;
+      text-align: left;
+      font-size: 1rem;
+      color: #ff6600;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      width: 100%;
+    }
+
+    .booking-details {
+      margin: 10px 0;
+    }
+
     /* Media Queries for responsiveness */
     @media (max-width: 768px) {
       h1 {
@@ -158,20 +173,42 @@
     <div id="status"></div>
   </div>
 
+  <!-- ข้อมูลจองก่อนหน้า -->
+  <div class="container" id="previousBookings">
+    <h3>ข้อมูลจองก่อนหน้า:</h3>
+    <div id="bookingList"></div>
+  </div>
+
   <script>
-    // เปิดหน้า ระบบจอง
+    // ฟังก์ชันในการแสดงข้อมูลการจองก่อนหน้า
+    function displayPreviousBookings() {
+      const bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+      const bookingList = document.getElementById('bookingList');
+      
+      if (bookings.length === 0) {
+        bookingList.innerHTML = '<p>ไม่มีการจอง</p>';
+        return;
+      }
+
+      bookingList.innerHTML = bookings.map(booking => `
+        <div class="booking-details">
+          <strong>${booking.name}</strong> จองเวลา: ${booking.startTime} ระยะเวลา: ${booking.duration} นาที
+        </div>
+      `).join('');
+    }
+
+    // ฟังก์ชันเปิดหน้า ระบบจอง
     function showBookingPage() {
       document.querySelector(".btn-container").classList.add("show");
       document.getElementById("bookingPage").classList.add("show");
     }
 
-    let countdownTimer;
-
+    // ฟังก์ชันจองคอมพิวเตอร์
     function bookComputer() {
       const startTime = document.getElementById('startTime').value;
       const duration = parseInt(document.getElementById('duration').value);
       const status = document.getElementById('status');
-
+      
       if (!startTime) {
         status.innerText = '⛔ กรุณาเลือกเวลาเริ่มเล่น';
         return;
@@ -195,6 +232,19 @@
         let remaining = duration * 60;
         status.innerText = `🕒 เริ่มจับเวลา ${duration} นาทีแล้ว!`;
 
+        const bookingDetails = {
+          name: 'ผู้จองคนที่ 1',
+          startTime: startTime,
+          duration: duration
+        };
+
+        // เก็บข้อมูลการจองใน LocalStorage
+        const bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+        bookings.push(bookingDetails);
+        localStorage.setItem('bookings', JSON.stringify(bookings));
+
+        displayPreviousBookings(); // แสดงข้อมูลการจองก่อนหน้า
+
         countdownTimer = setInterval(() => {
           remaining--;
           const min = Math.floor(remaining / 60);
@@ -209,6 +259,9 @@
         }, 1000);
       }, delay);
     }
+
+    // เมื่อโหลดหน้าเว็บ ให้แสดงการจองก่อนหน้า
+    window.onload = displayPreviousBookings;
   </script>
 </body>
 </html>
